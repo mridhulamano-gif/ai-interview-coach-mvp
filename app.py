@@ -1,6 +1,8 @@
+
 import io
 import re
 import wave
+import html
 from datetime import datetime
 
 import pandas as pd
@@ -17,47 +19,60 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==========================================================
+# =========================================================
 # DESIGN AND STYLING
-# ==========================================================
+# =========================================================
 
-st.markdown("""
+st.markdown(r"""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+
 :root {
-    --navy: #101d36;
-    --blue: #3568c8;
-    --gold: #f2bd55;
-    --ink: #18263d;
-    --muted: #52627a;
-    --line: #d9e2ef;
-    --page: #f3f6fb;
+    --navy: #111b35;
+    --ink: #17233b;
+    --muted: #65728a;
+    --blue: #4169e1;
+    --cyan: #49c5c2;
+    --gold: #f4bd62;
+    --paper: #f4f7fc;
+    --line: #e2e8f2;
 }
 
 .stApp {
-    background: var(--page);
+    background: radial-gradient(circle at 85% 0%, #e9efff 0, transparent 27%), var(--paper);
     color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+}
+
+[data-testid="stHeader"] {
+    background: transparent;
 }
 
 [data-testid="stSidebar"] {
-    background: var(--navy);
+    background: linear-gradient(180deg, #111b35, #1c3158);
 }
 
 [data-testid="stSidebar"] * {
-    color: #f7f9ff !important;
+    color: #f5f7ff !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: #d5def2 !important;
 }
 
 h1, h2, h3, h4 {
+    font-family: 'Manrope', sans-serif !important;
     color: var(--navy) !important;
-    font-weight: 780 !important;
+    letter-spacing: -.025em;
 }
 
-p, li {
+p, li, label {
     color: var(--ink);
 }
 
 [data-testid="stWidgetLabel"] p {
-    color: #263954 !important;
-    font-weight: 650;
+    color: #263752 !important;
+    font-weight: 700 !important;
 }
 
 [data-testid="stCaptionContainer"] p {
@@ -65,172 +80,252 @@ p, li {
 }
 
 input, textarea {
-    color: #17243b !important;
-    background: #ffffff !important;
-    -webkit-text-fill-color: #17243b !important;
+    color: #17233b !important;
+    background: #fff !important;
+    -webkit-text-fill-color: #17233b !important;
 }
 
 textarea::placeholder, input::placeholder {
-    color: #738198 !important;
-    -webkit-text-fill-color: #738198 !important;
+    color: #8b97aa !important;
+    -webkit-text-fill-color: #8b97aa !important;
 }
 
 div[data-baseweb="select"] > div {
-    background: #ffffff !important;
-    color: #17243b !important;
-    border-color: #b9c7da !important;
+    background: #fff !important;
+    border: 1px solid #d8e0ed !important;
 }
 
 div[data-baseweb="select"] * {
-    color: #17243b !important;
-}
-
-[role="listbox"] * {
-    color: #17243b !important;
-    background: #ffffff !important;
+    color: #17233b !important;
 }
 
 [data-testid="stMetric"] {
-    background: #ffffff;
+    background: #fff;
     border: 1px solid var(--line);
-    padding: 13px 15px;
-    border-radius: 13px;
-    box-shadow: 0 3px 12px #101d3608;
+    padding: 16px 18px;
+    border-radius: 17px;
+    box-shadow: 0 8px 24px #1b2b4a0a;
 }
 
 [data-testid="stMetricLabel"] {
-    color: var(--muted) !important;
+    color: #65728a !important;
+    font-weight: 700;
 }
 
 [data-testid="stMetricValue"] {
-    color: var(--navy) !important;
+    color: #17233b !important;
+    font-family: 'Manrope', sans-serif;
 }
 
 .hero {
-    background: linear-gradient(
-        118deg,
-        #101d36,
-        #24477e 72%,
-        #3568c8
-    );
-    padding: 28px 32px;
-    border-radius: 18px;
-    margin: 2px 0 24px;
-    box-shadow: 0 10px 26px #101d3620;
+    padding: 30px 34px;
+    border-radius: 24px;
+    background: linear-gradient(115deg, #111b35 0%, #233d70 62%, #4169e1 100%);
+    color: white;
+    margin: 0 0 25px;
+    box-shadow: 0 18px 40px #172b5525;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero:after {
+    content: '✦';
+    position: absolute;
+    right: 6%;
+    top: -35px;
+    font-size: 180px;
+    color: #ffffff12;
+}
+
+.hero .eyebrow {
+    color: #f4bd62;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .17em;
+    text-transform: uppercase;
 }
 
 .hero h1 {
-    color: white !important;
-    margin: 0 0 7px;
-    font-size: 2.2rem;
+    color: #fff !important;
+    font-size: 2.45rem;
+    margin: .35rem 0 .2rem;
 }
 
 .hero p {
-    color: #eaf1ff !important;
+    color: #e4ecff !important;
     margin: 0;
-}
-
-.eyebrow {
-    color: var(--gold) !important;
-    font-weight: 800;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    font-size: .75rem;
-    margin-bottom: 8px;
+    font-size: 1.03rem;
 }
 
 .panel {
-    background: white;
+    background: #fff;
     border: 1px solid var(--line);
-    border-radius: 15px;
-    padding: 18px 20px;
-    margin: 10px 0;
-    box-shadow: 0 3px 13px #101d3608;
-}
-
-.question {
-    background: white;
-    border: 1px solid var(--line);
-    border-left: 5px solid var(--gold);
-    border-radius: 14px;
+    border-radius: 18px;
     padding: 20px 22px;
-    margin: 12px 0 18px;
+    box-shadow: 0 8px 24px #1b2b4a08;
+    margin: 8px 0;
 }
 
-.tag {
+.feature {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 17px 18px;
+    height: 100%;
+    box-shadow: 0 5px 18px #1b2b4a08;
+}
+
+.feature .emoji {
+    font-size: 1.5rem;
+}
+
+.feature h4 {
+    margin: .45rem 0 .25rem;
+}
+
+.feature p {
+    color: var(--muted);
+    font-size: .91rem;
+    margin: 0;
+}
+
+.question-card {
+    background: linear-gradient(120deg, #fff, #f8faff);
+    border: 1px solid #dce5f3;
+    border-left: 6px solid var(--gold);
+    border-radius: 18px;
+    padding: 23px 25px;
+    margin: 10px 0 18px;
+    box-shadow: 0 8px 22px #1b2b4a08;
+}
+
+.pill {
     display: inline-block;
-    background: #eaf1ff;
-    color: #244b98;
-    padding: 5px 10px;
-    border-radius: 25px;
-    font-size: .78rem;
-    font-weight: 750;
+    padding: 5px 11px;
+    border-radius: 50px;
+    background: #eaf0ff;
+    color: #2c4c9b;
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .04em;
 }
 
 .tip {
-    background: #eaf1ff;
-    color: #233d66;
+    background: #eef5ff;
     border-left: 4px solid var(--blue);
-    border-radius: 9px;
-    padding: 13px 15px;
-    margin: 10px 0;
+    padding: 14px 17px;
+    border-radius: 12px;
+    color: #263d65;
+    margin: 12px 0;
 }
 
-.footer {
-    color: #687890 !important;
-    font-size: .79rem;
-    padding: 20px 0;
+.score-hero {
+    background: linear-gradient(120deg, #14213e, #294b83);
+    padding: 22px 24px;
+    border-radius: 20px;
+    color: white;
+}
+
+.score-hero h2, .score-hero h3, .score-hero p {
+    color: white !important;
+    margin: 0;
+}
+
+.score-number {
+    font-family: 'Manrope', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #fff;
+}
+
+.bar-row {
+    margin: 13px 0;
+}
+
+.bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    color: #263752;
+    font-size: .9rem;
+    margin-bottom: 6px;
+}
+
+.bar-track {
+    height: 10px;
+    background: #e9eef7;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #4169e1, #49c5c2);
 }
 
 div.stButton > button,
 div.stDownloadButton > button {
-    border-radius: 10px;
-    min-height: 43px;
-    font-weight: 700;
-    border: 1px solid #c7d3e3;
+    border-radius: 12px;
+    min-height: 44px;
+    font-weight: 750;
+    border: 1px solid #d4deec;
+    transition: .2s;
 }
 
 div.stButton > button[kind="primary"] {
-    background: #d84c54;
+    background: linear-gradient(100deg, #3159c9, #5279e9);
     color: white;
     border: 0;
+    box-shadow: 0 6px 15px #4169e133;
 }
 
 div.stButton > button[kind="primary"]:hover {
-    background: #b93e48;
+    background: linear-gradient(100deg, #2448ad, #4169e1);
     color: white;
+    transform: translateY(-1px);
 }
 
 [data-testid="stProgress"] > div > div {
-    background: var(--blue);
+    background: linear-gradient(90deg, #4169e1, #49c5c2);
+}
+
+hr {
+    border-color: #e7ecf4;
+}
+
+.footer {
+    color: #8490a4;
+    font-size: .78rem;
+    padding: 20px 0 5px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ==========================================================
+# =========================================================
 # INTERVIEW QUESTION BANK
-# ==========================================================
+# =========================================================
 
 QUESTION_BANK = {
-
-    "HR / Behavioral": [
+    "HR / Behavioural": [
         "Tell me about yourself and what makes you suitable for this role?",
-        "What are your greatest strengths, and how have you demonstrated them?",
+        "What are your greatest strengths? Give an example of how you used them.",
         "Describe a challenge you faced and how you overcame it.",
         "Tell me about a time you worked successfully in a team.",
         "Describe a mistake you made and what you learned from it.",
         "How do you manage multiple deadlines?",
-        "Tell me about a time you handled disagreement with a teammate.",
-        "Why do you want this role?",
+        "Tell me about a time you handled a disagreement with a teammate.",
+        "Why do you want this role and this organisation?",
         "Describe a situation where you took initiative.",
-        "Where do you see yourself in five years?",
         "How do you respond to constructive criticism?",
         "What motivates you to perform your best?",
+        "What is one skill you are actively improving?",
     ],
 
     "Technical": [
-        "Explain a technical project you have worked on and your contribution.",
+        "Explain a technical project you worked on and your personal contribution.",
         "Describe how you would debug a problem you cannot immediately solve.",
         "Explain a technical concept in your field to a beginner.",
         "How do you test your work and ensure its quality?",
@@ -240,7 +335,7 @@ QUESTION_BANK = {
         "Explain a project decision and the alternatives you considered.",
         "How do you approach a problem when requirements are unclear?",
         "Describe a time you improved an existing solution.",
-        "How would you explain a trade-off between performance and maintainability?",
+        "How would you balance performance and maintainability?",
         "What technical skill are you currently improving, and why?",
     ],
 
@@ -251,18 +346,24 @@ QUESTION_BANK = {
         "How would you respond to a dissatisfied customer?",
         "What would you do if a teammate was not contributing?",
         "How would you prioritise two urgent tasks?",
-        "What would you do if you discovered an error in your work after submission?",
+        "What would you do if you discovered an error after submission?",
         "How would you handle an unfamiliar task with a short deadline?",
         "What would you do if you received conflicting feedback?",
-        "How would you respond if you did not know the answer to an interview question?",
+        "How would you respond if you did not know an interview answer?",
         "How would you communicate a project delay to stakeholders?",
         "How would you approach a task when success criteria are unclear?",
     ],
+
+    "Mixed": []
 }
 
+QUESTION_BANK["Mixed"] = (
+    QUESTION_BANK["HR / Behavioural"][:6]
+    + QUESTION_BANK["Technical"][:6]
+    + QUESTION_BANK["Situational"][:6]
+)
 
 ROLE_QUESTIONS = {
-
     "Software / IT": [
         "Explain a project where you used programming to solve a real problem.",
         "How would you find and fix a bug that occurs only occasionally?",
@@ -299,40 +400,39 @@ ROLE_QUESTIONS = {
     ],
 }
 
-
 FILLERS = [
-    "um",
-    "uh",
-    "erm",
-    "actually",
-    "basically",
-    "literally",
-    "you know",
-    "i mean",
-    "like",
+    "um", "uh", "erm", "actually",
+    "basically", "literally", "you know", "i mean"
 ]
 
+STOP_WORDS = {
+    "tell", "about", "what", "when", "where", "which",
+    "would", "could", "should", "have", "your", "with",
+    "that", "this", "from", "into", "describe", "explain",
+    "time", "role", "work", "they", "them", "how",
+    "does", "did", "will", "were", "been", "being",
+    "the", "and", "for", "are", "you"
+}
 
-# ==========================================================
+
+# =========================================================
 # SESSION STATE
-# ==========================================================
+# =========================================================
 
 DEFAULTS = {
     "page": "Setup",
     "name": "",
     "role": "General / Student",
     "experience": "Student / Fresher",
-    "interview_type": "HR / Behavioral",
+    "interview_type": "Mixed",
     "question_count": 5,
     "questions": [],
     "index": 0,
     "answers": {},
-    "audio": {},
     "audio_metrics": {},
     "history": [],
     "result": None,
     "active": False,
-    "started": None,
     "session_id": 0,
     "start_error": "",
 }
@@ -342,9 +442,9 @@ for key, value in DEFAULTS.items():
         st.session_state[key] = value
 
 
-# ==========================================================
-# ANSWER ANALYSIS FUNCTIONS
-# ==========================================================
+# =========================================================
+# ANSWER ANALYSIS
+# =========================================================
 
 def word_count(text):
     return len(re.findall(r"\b[\w'-]+\b", text or ""))
@@ -363,9 +463,9 @@ def filler_counts(text):
 
 
 def evaluate_answer(question, answer):
-
     answer = (answer or "").strip()
     words = word_count(answer)
+    low = answer.lower()
 
     if not answer:
         return {
@@ -375,36 +475,35 @@ def evaluate_answer(question, answer):
             "specificity": 0,
             "relevance": 0,
             "words": 0,
-            "feedback": [
-                "Write or transcribe an answer before finishing this question."
-            ],
             "strengths": [],
+            "feedback": ["Add an answer before completing this question."],
+            "communication": ["Try speaking in complete, clear sentences."],
             "fillers": {},
-            "communication": [],
         }
 
-    low = answer.lower()
-
-    # Answer development: 25 marks
-
+    # Transparent practice heuristics, not semantic AI grading.
     if words < 10:
-        development = 5
+        development = 4
     elif words < 25:
-        development = 12
+        development = 10
     elif words < 45:
-        development = 18
-    elif words <= 160:
-        development = 25
+        development = 17
+    elif words <= 150:
+        development = 23
     else:
-        development = 21
-
-    # Structure: 25 marks
+        development = 18
 
     groups = [
-        ["situation", "context"],
-        ["task", "goal", "responsible"],
-        ["action", "implemented", "developed"],
-        ["result", "outcome", "achieved", "improved", "learned"],
+        ["situation", "context", "when"],
+        ["task", "goal", "responsible", "needed to"],
+        [
+            "action", "implemented", "developed", "created",
+            "i decided", "i organised", "i analyzed", "i analysed"
+        ],
+        [
+            "result", "outcome", "achieved", "improved",
+            "learned", "reduced", "increased"
+        ],
     ]
 
     hits = sum(
@@ -413,64 +512,50 @@ def evaluate_answer(question, answer):
     )
 
     sequence = any(
-        word in low
-        for word in [
-            "first",
-            "then",
-            "after that",
-            "finally",
-            "as a result",
-        ]
+        term in low
+        for term in ["first", "then", "after that", "finally", "as a result"]
     )
 
-    structure = (
-        min(25, 7 + hits * 4 + (2 if sequence else 0))
-        if words >= 10 else 3
+    structure = min(
+        25,
+        5 + hits * 5 + (2 if sequence else 0)
     )
 
-    # Specificity: 25 marks
-
-    terms = [
-        "project", "team", "customer", "deadline",
-        "data", "developed", "created", "analysed",
-        "analyzed", "tested", "measured", "implemented",
-        "achieved", "improved", "reduced", "increased",
-        "example", "result",
+    evidence_terms = [
+        "because", "for example", "specifically", "measured",
+        "tested", "customer", "project", "team", "deadline",
+        "data", "client", "users", "percent", "%",
+        "hours", "days", "budget"
     ]
 
-    specific_hits = sum(term in low for term in terms)
+    evidence = sum(
+        1 for term in evidence_terms if term in low
+    )
 
     has_number = bool(
         re.search(r"\b\d+(?:[.,]\d+)?%?\b", low)
     )
 
-    specificity = (
-        min(25, 5 + specific_hits * 2 + (4 if has_number else 0))
-        if words >= 10 else 3
+    specificity = min(
+        25,
+        5 + evidence * 2 + (4 if has_number else 0)
     )
 
-    # Relevance: 25 marks (keyword-overlap estimate)
-
-    stop = {
-        "tell", "about", "what", "when", "where",
-        "which", "would", "could", "should", "have",
-        "your", "with", "that", "this", "from",
-        "into", "describe", "explain", "time",
-        "role", "work", "they", "them", "how",
-    }
-
-    qterms = (
+    question_terms = (
         set(re.findall(r"\b[a-z]{4,}\b", question.lower()))
-        - stop
+        - STOP_WORDS
     )
 
-    aterms = set(
-        re.findall(r"\b[a-z]{4,}\b", low)
+    answer_terms = (
+        set(re.findall(r"\b[a-z]{4,}\b", low))
+        - STOP_WORDS
     )
+
+    overlap = len(question_terms & answer_terms)
 
     relevance = (
-        min(25, 9 + len(qterms & aterms) * 4)
-        if words >= 10 else 3
+        min(25, 7 + overlap * 4)
+        if question_terms else 15
     )
 
     score = min(
@@ -478,42 +563,48 @@ def evaluate_answer(question, answer):
         development + structure + specificity + relevance
     )
 
-    feedback = []
     strengths = []
+    feedback = []
     communication = []
 
-    if words < 25:
-        feedback.append(
-            "Develop your answer with context, your actions and the outcome."
-        )
-    elif words <= 160:
+    if 45 <= words <= 150:
         strengths.append(
-            "Your answer has a useful amount of detail."
+            "Your answer has a useful level of detail."
+        )
+    elif words < 45:
+        feedback.append(
+            "Add context, explain your actions and finish with the outcome."
         )
     else:
         feedback.append(
-            "Shorten the answer and remove repeated or less relevant details."
+            "Keep the answer focused; remove repeated details."
         )
 
     if hits >= 3:
         strengths.append(
-            "Your answer contains several parts of a STAR-style structure."
+            "Your answer includes several STAR elements."
         )
     else:
         feedback.append(
-            "Use STAR: Situation, Task, Action and Result."
+            "For experience-based questions, use STAR: "
+            "Situation, Task, Action and Result."
         )
 
-    if specific_hits >= 4 or has_number:
+    if evidence >= 3 or has_number:
         strengths.append(
             "You included concrete details or evidence."
         )
     else:
         feedback.append(
-            "Add a real example, your personal contribution or a measurable result."
+            "Add a specific example, your personal contribution "
+            "or a measurable result."
         )
 
-    if relevance < 14:
+    if relevance >= 15:
+        strengths.append(
+            "Some wording in your answer connects with the question."
+        )
+    else:
         feedback.append(
             "Answer the exact question directly in your opening sentence."
         )
@@ -521,32 +612,30 @@ def evaluate_answer(question, answer):
     fillers = filler_counts(answer)
     total_fillers = sum(fillers.values())
 
-    if total_fillers >= 4:
+    if total_fillers:
         communication.append(
-            f"Reduce filler words; {total_fillers} were found in the transcript."
-        )
-    elif total_fillers:
-        communication.append(
-            "A few filler words were found. Try a short pause instead."
+            f"{total_fillers} common filler-word occurrence(s) "
+            "detected in the text."
         )
     else:
         communication.append(
-            "No common filler-word pattern was found in the transcript."
+            "No common filler-word pattern was detected in the text."
         )
 
     if any(
         phrase in low
         for phrase in [
-            "i think maybe",
-            "i guess",
-            "sort of",
-            "kind of",
-            "not sure",
+            "i think maybe", "i guess",
+            "sort of", "kind of", "not sure"
         ]
     ):
         communication.append(
             "Replace vague phrases with a clear explanation while staying honest."
         )
+
+    communication.append(
+        "Read your answer aloud once and check that each sentence adds useful information."
+    )
 
     return {
         "score": score,
@@ -555,42 +644,22 @@ def evaluate_answer(question, answer):
         "specificity": specificity,
         "relevance": relevance,
         "words": words,
-        "feedback": feedback,
         "strengths": strengths,
-        "fillers": fillers,
+        "feedback": feedback,
         "communication": communication,
+        "fillers": fillers,
     }
 
 
-# ==========================================================
-# AUDIO ANALYSIS AND SPEECH RECOGNITION
-# ==========================================================
+# =========================================================
+# AUDIO AND SPEECH RECOGNITION
+# =========================================================
 
 def audio_stats(data, transcript):
-
     try:
         with wave.open(io.BytesIO(data), "rb") as wav:
-
             duration = (
                 wav.getnframes() / float(wav.getframerate())
-            )
-
-            frames = wav.readframes(wav.getnframes())
-            width = wav.getsampwidth()
-
-        peak = None
-
-        if width == 2:
-            import array
-
-            values = array.array("h")
-            values.frombytes(
-                frames[:len(frames) - len(frames) % 2]
-            )
-
-            peak = (
-                max((abs(v) for v in values), default=0)
-                / 32768
             )
 
         words = word_count(transcript)
@@ -602,69 +671,72 @@ def audio_stats(data, transcript):
 
         return {
             "duration": round(duration, 1),
-            "peak": round(peak, 3) if peak is not None else None,
             "wpm": wpm,
         }
 
     except Exception:
         return {
             "duration": None,
-            "peak": None,
             "wpm": None,
         }
 
 
 def transcribe(data, language):
-
     if sr is None:
         return None, (
             "SpeechRecognition is not installed. "
-            "Install the packages listed below."
+            "You can type your answer instead."
         )
 
     try:
         recognizer = sr.Recognizer()
 
         with sr.AudioFile(io.BytesIO(data)) as source:
-            recording = recognizer.record(source)
+            audio = recognizer.record(source)
 
         transcript = recognizer.recognize_google(
-            recording,
-            language=language,
+            audio,
+            language=language
         )
 
         return transcript, None
 
     except sr.UnknownValueError:
         return None, (
-            "The service could not understand the recording. "
+            "The recording could not be understood. "
             "Try again in a quiet place."
         )
 
     except sr.RequestError as exc:
         return None, (
-            f"Speech recognition service unavailable: {exc}. "
+            f"Speech recognition is unavailable: {exc}. "
             "You can type your answer instead."
         )
 
     except Exception as exc:
-        return None, f"Could not process this audio: {exc}"
+        return None, f"Could not process this recording: {exc}"
 
 
-# ==========================================================
+# =========================================================
 # INTERVIEW CALLBACKS
-# ==========================================================
+# =========================================================
+
+def answer_key(index):
+    return f"answer_{st.session_state.session_id}_{index}"
+
+
+def audio_key(index):
+    return f"audio_{st.session_state.session_id}_{index}"
+
 
 def start_interview():
-
     if not st.session_state.name.strip():
         st.session_state.start_error = (
-            "Please enter your name first."
+            "Please enter your name before starting."
         )
         return
 
     st.session_state.start_error = ""
-
     st.session_state.session_id += 1
 
     pool = (
@@ -672,8 +744,9 @@ def start_interview():
         + ROLE_QUESTIONS[st.session_state.role]
     )
 
+    # Rotate the pool between sessions to add variety.
     offset = (
-        st.session_state.session_id - 1
+        st.session_state.session_id * 3
     ) % len(pool)
 
     pool = pool[offset:] + pool[:offset]
@@ -684,18 +757,15 @@ def start_interview():
 
     st.session_state.index = 0
     st.session_state.answers = {}
-    st.session_state.audio = {}
     st.session_state.audio_metrics = {}
     st.session_state.active = True
     st.session_state.result = None
-    st.session_state.started = datetime.now()
     st.session_state.page = "Mock Interview"
 
 
 def save_answer():
-
     index = st.session_state.index
-    key = f"answer_{index}"
+    key = answer_key(index)
 
     st.session_state.answers[index] = (
         st.session_state.get(key, "").strip()
@@ -703,35 +773,28 @@ def save_answer():
 
 
 def next_question():
-
     save_answer()
 
     st.session_state.index = min(
         st.session_state.index + 1,
-        len(st.session_state.questions) - 1,
+        len(st.session_state.questions) - 1
     )
 
 
 def previous_question():
-
     save_answer()
 
     st.session_state.index = max(
         0,
-        st.session_state.index - 1,
+        st.session_state.index - 1
     )
 
 
 def finish_interview():
-
     save_answer()
-
     details = []
 
-    for i, question in enumerate(
-        st.session_state.questions
-    ):
-
+    for i, question in enumerate(st.session_state.questions):
         answer = st.session_state.answers.get(i, "")
 
         details.append({
@@ -742,25 +805,28 @@ def finish_interview():
             "audio": st.session_state.audio_metrics.get(i, {}),
         })
 
-    average = (
+    answered = sum(
+        bool(item["answer"])
+        for item in details
+    )
+
+    score = (
         round(
-            sum(x["score"] for x in details)
+            sum(item["score"] for item in details)
             / len(details)
         )
         if details else 0
     )
 
     result = {
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "name": st.session_state.name,
+        "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+        "name": st.session_state.name.strip(),
         "role": st.session_state.role,
         "experience": st.session_state.experience,
         "type": st.session_state.interview_type,
         "count": len(details),
-        "score": average,
-        "answered": sum(
-            bool(x["answer"]) for x in details
-        ),
+        "score": score,
+        "answered": answered,
         "details": details,
     }
 
@@ -774,55 +840,45 @@ def go_setup():
     st.session_state.page = "Setup"
 
 
-# ==========================================================
+# =========================================================
 # SIDEBAR
-# ==========================================================
+# =========================================================
 
 with st.sidebar:
-
     st.markdown("# 🎯 InterviewReady")
-
-    st.markdown(
-        "**AI Interview Coach · Practice MVP**"
-    )
-
+    st.markdown("**YOUR PERSONAL INTERVIEW STUDIO**")
     st.caption(
-        "Practise. Improve. Build confidence."
+        "Practise with purpose. Improve with every attempt."
     )
 
     st.divider()
 
     st.radio(
-        "Navigate",
-        [
-            "Setup",
-            "Mock Interview",
-            "Results Dashboard",
-        ],
-        key="page",
+        "Workspace",
+        ["Setup", "Mock Interview", "Results Dashboard"],
+        key="page"
     )
 
     st.divider()
 
-    st.markdown("### 💡 STAR method")
+    st.markdown("### ✨ The STAR framework")
 
     st.markdown(
-        "**S**ituation · **T**ask · "
-        "**A**ction · **R**esult"
+        "**S**ituation · **T**ask · **A**ction · **R**esult"
     )
 
     st.caption(
-        "Free-first demo · Practice guidance, not a hiring decision"
+        "A practice companion — not a hiring decision tool."
     )
 
 
-# ==========================================================
+# =========================================================
 # MAIN HEADER
-# ==========================================================
+# =========================================================
 
 st.markdown("""
 <div class="hero">
-    <div class="eyebrow">Your personal practice space</div>
+    <div class="eyebrow">YOUR PERSONAL PRACTICE SPACE</div>
     <h1>InterviewReady</h1>
     <p>
         Practise confidently. Communicate clearly.
@@ -832,37 +888,34 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ==========================================================
+# =========================================================
 # SETUP PAGE
-# ==========================================================
+# =========================================================
 
 if st.session_state.page == "Setup":
 
     left, right = st.columns(
-        [1.45, 1],
-        gap="large",
+        [1.15, 1],
+        gap="large"
     )
 
     with left:
+        st.markdown("## Build your practice session")
 
-        st.subheader(
-            "Set up your mock interview"
-        )
-
-        st.write(
-            "Choose your target role and interview style."
+        st.caption(
+            "A few details help shape a more relevant interview."
         )
 
         st.text_input(
             "Your name",
             key="name",
-            placeholder="Enter your name",
+            placeholder="e.g. Alex"
         )
 
         st.selectbox(
             "Target role",
             list(ROLE_QUESTIONS.keys()),
-            key="role",
+            key="role"
         )
 
         st.selectbox(
@@ -871,356 +924,298 @@ if st.session_state.page == "Setup":
                 "Student / Fresher",
                 "Entry level",
                 "1–3 years",
-                "3+ years",
+                "3+ years"
             ],
-            key="experience",
+            key="experience"
         )
 
         st.selectbox(
-            "Interview type",
+            "Interview focus",
             list(QUESTION_BANK.keys()),
-            key="interview_type",
+            key="interview_type"
         )
 
         st.slider(
-            "Number of questions",
+            "Questions in this session",
             3,
             10,
-            key="question_count",
+            value=5,
+            key="question_count"
         )
 
         if st.session_state.start_error:
             st.error(st.session_state.start_error)
 
         st.button(
-            "🚀 Start mock interview",
+            "🚀  Start my interview",
             type="primary",
             use_container_width=True,
-            on_click=start_interview,
+            on_click=start_interview
         )
 
     with right:
+        st.markdown("## Your interview toolkit")
 
-        st.subheader("What you will get")
+        features = [
+            (
+                "🧭",
+                "Guided practice",
+                "One question at a time with clear progress."
+            ),
+            (
+                "🎙️",
+                "Voice-to-text",
+                "Record an answer and review its editable transcript."
+            ),
+            (
+                "🪄",
+                "Answer coaching",
+                "See strengths, gaps and practical improvement tips."
+            ),
+            (
+                "📈",
+                "Performance insights",
+                "Explore skill scores and your practice history."
+            ),
+        ]
+
+        for icon, title, description in features:
+            st.markdown(
+                f"""
+                <div class="feature">
+                    <span class="emoji">{icon}</span>
+                    <h4>{title}</h4>
+                    <p>{description}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         st.markdown("""
-        <div class="panel">
-
-        <h3>🧭 Guided interview</h3>
-        <p>One question at a time with progress tracking.</p>
-
-        <hr>
-
-        <h3>🎙️ Voice-to-text practice</h3>
-        <p>Record an answer and convert speech into editable text.</p>
-
-        <hr>
-
-        <h3>📝 Answer coaching</h3>
-        <p>Review structure, detail, relevance and communication tips.</p>
-
-        <hr>
-
-        <h3>📊 Performance dashboard</h3>
-        <p>Explore skill scores, voice indicators and practice history.</p>
-
-        </div>
-
         <div class="tip">
-        <b>Practice tip:</b>
-        Give a real example, explain what you personally did
-        and finish with the result.
+            <b>Quick coaching tip</b><br>
+            Use a real example. Explain what <i>you</i> did,
+            why you did it and what changed because of your actions.
         </div>
         """, unsafe_allow_html=True)
 
         if sr is None:
-            st.warning(
-                "Speech-to-text package is not available "
-                "until requirements are installed."
+            st.info(
+                "Voice transcription is unavailable until the optional "
+                "speech package is installed. Typed answers work normally."
             )
 
     st.markdown(
-        '<div class="footer">InterviewReady MVP · Avoid entering confidential personal information.</div>',
-        unsafe_allow_html=True,
+        '<div class="footer">InterviewReady · Practice data is kept in this browser session. Avoid entering confidential information.</div>',
+        unsafe_allow_html=True
     )
 
 
-# ==========================================================
+# =========================================================
 # MOCK INTERVIEW PAGE
-# ==========================================================
+# =========================================================
 
 elif st.session_state.page == "Mock Interview":
 
     if not st.session_state.active:
-
         st.info(
-            "No active interview. Start a session from Setup."
+            "There is no active interview. Start a new session from Setup."
         )
 
         st.button(
-            "Go to Setup",
-            on_click=go_setup,
+            "Go to setup",
+            on_click=go_setup
         )
 
     else:
-
         i = st.session_state.index
         total = len(st.session_state.questions)
         question = st.session_state.questions[i]
 
-        key = f"answer_{i}"
-        pending = f"pending_transcript_{i}"
+        key = answer_key(i)
+        pending_key = f"pending_{st.session_state.session_id}_{i}"
 
-        # Apply transcript before creating the text-area widget.
-        if pending in st.session_state:
-
-            st.session_state[key] = (
-                st.session_state.pop(pending)
-            )
+        if pending_key in st.session_state:
+            st.session_state[key] = st.session_state.pop(pending_key)
 
         elif key not in st.session_state:
-
             st.session_state[key] = (
                 st.session_state.answers.get(i, "")
             )
 
-        st.subheader("Mock interview")
+        top1, top2 = st.columns([3, 1])
 
-        st.write(
-            f"Hello, **{st.session_state.name.strip()}**. "
-            "Take your time and answer naturally."
-        )
+        with top1:
+            st.markdown(
+                f"## Hello, {html.escape(st.session_state.name.strip())} 👋"
+            )
 
-        st.progress((i + 1) / total)
+        with top2:
+            st.markdown(
+                f'<div style="text-align:right;padding-top:12px;color:#65728a;font-weight:700">SESSION {st.session_state.session_id:02d}</div>',
+                unsafe_allow_html=True
+            )
 
-        st.caption(
-            f"QUESTION {i + 1} OF {total} · "
-            f"{st.session_state.role}"
+        st.progress(
+            (i + 1) / total,
+            text=f"Question {i + 1} of {total} · {round((i + 1) / total * 100)}% complete"
         )
 
         st.markdown(
             f"""
-            <div class="question">
-                <span class="tag">
-                    {st.session_state.interview_type}
+            <div class="question-card">
+                <span class="pill">
+                    {html.escape(st.session_state.interview_type.upper())}
                 </span>
-                <h3 style="margin-top:12px">
-                    {question}
-                </h3>
-                <p style="color:#52627a">
-                    Use a clear example and explain the outcome.
+                <h2 style="margin:13px 0 7px">
+                    {html.escape(question)}
+                </h2>
+                <p style="color:#65728a;margin:0">
+                    Think clearly, use an example and explain the outcome.
                 </p>
             </div>
             """,
-            unsafe_allow_html=True,
+            unsafe_allow_html=True
         )
 
         st.text_area(
-            "Your answer (type or edit your transcript)",
+            "Your answer",
             key=key,
-            height=175,
-            placeholder="Write your answer here...",
+            height=190,
+            placeholder=(
+                "Start with a direct response, then add context, "
+                "actions and results..."
+            )
         )
 
-        current = st.session_state.get(
-            key, ""
-        ).strip()
+        current = st.session_state.get(key, "").strip()
 
         st.caption(
-            f"Word count: {word_count(current)}"
+            f"{word_count(current)} words · "
+            "Your answer is saved as you move between questions."
         )
 
-        # ---------------- VOICE INPUT ----------------
-
-        st.markdown("### 🎙️ Record and transcribe")
-
-        st.write(
-            "Record your answer, then click Transcribe. "
-            "Check the transcript for recognition errors."
-        )
-
-        language = st.selectbox(
-            "Recognition language",
-            [
-                "English (India)",
-                "English (US)",
-                "English (UK)",
-            ],
-            key=f"language_{i}",
-        )
-
-        lang_code = {
-            "English (India)": "en-IN",
-            "English (US)": "en-US",
-            "English (UK)": "en-GB",
-        }[language]
-
-        try:
-
-            audio = st.audio_input(
-                "Record your answer",
-                key=f"audio_input_{i}",
+        # VOICE RECORDING
+        with st.expander(
+            "🎙️ Record your answer and create a transcript",
+            expanded=False
+        ):
+            st.write(
+                "Record in a quiet place. Transcription requires an "
+                "internet connection and may make mistakes, so review "
+                "the text before submitting."
             )
 
-            if audio is not None:
+            language = st.selectbox(
+                "Speech recognition language",
+                [
+                    "English (India)",
+                    "English (US)",
+                    "English (UK)"
+                ],
+                key=f"lang_{st.session_state.session_id}_{i}"
+            )
 
-                data = audio.getvalue()
+            lang_code = {
+                "English (India)": "en-IN",
+                "English (US)": "en-US",
+                "English (UK)": "en-GB"
+            }[language]
 
-                st.session_state.audio[i] = data
-
-                st.audio(
-                    data,
-                    format="audio/wav",
+            try:
+                audio = st.audio_input(
+                    "Record your response",
+                    key=audio_key(i)
                 )
 
-                if st.button(
-                    "✨ Transcribe recording",
-                    key=f"transcribe_{i}",
-                    type="primary",
-                ):
+                if audio is not None:
+                    data = audio.getvalue()
 
-                    with st.spinner(
-                        "Transcribing your speech..."
+                    st.audio(
+                        data,
+                        format="audio/wav"
+                    )
+
+                    if st.button(
+                        "✨ Transcribe and add to answer",
+                        key=f"transcribe_{st.session_state.session_id}_{i}",
+                        type="primary"
                     ):
+                        with st.spinner("Converting speech to text..."):
+                            transcript, error = transcribe(
+                                data,
+                                lang_code
+                            )
 
-                        transcript, error = transcribe(
-                            data,
-                            lang_code,
-                        )
+                        if transcript:
+                            st.session_state[pending_key] = transcript
+                            st.session_state.answers[i] = transcript
 
-                    if transcript:
+                            st.session_state.audio_metrics[i] = (
+                                audio_stats(data, transcript)
+                            )
 
-                        st.session_state[pending] = transcript
+                            st.rerun()
 
-                        st.session_state.answers[i] = transcript
+                        else:
+                            st.warning(
+                                error or "Transcription could not be completed."
+                            )
 
-                        st.session_state.audio_metrics[i] = (
-                            audio_stats(data, transcript)
-                        )
-
-                        st.session_state[
-                            f"transcription_status_{i}"
-                        ] = (
-                            "Transcript added to the answer box. "
-                            "Please review and edit it."
-                        )
-
-                        st.rerun()
-
-                    else:
-
-                        st.session_state[
-                            f"transcription_status_{i}"
-                        ] = error
-
-                status = st.session_state.get(
-                    f"transcription_status_{i}",
-                    "",
+            except Exception:
+                st.info(
+                    "Audio recording is not supported in this browser. "
+                    "You can type your answer instead."
                 )
 
-                if status:
-
-                    if status.startswith("Transcript"):
-                        st.success(status)
-                    else:
-                        st.warning(status)
-
-                metrics = st.session_state.audio_metrics.get(
-                    i, {}
-                )
-
-                if metrics:
-
-                    a, b, c = st.columns(3)
-
-                    a.metric(
-                        "Recording length",
-                        (
-                            f"{metrics['duration']} sec"
-                            if metrics["duration"] is not None
-                            else "N/A"
-                        ),
-                    )
-
-                    b.metric(
-                        "Estimated pace",
-                        (
-                            f"{metrics['wpm']} WPM"
-                            if metrics["wpm"]
-                            else "N/A"
-                        ),
-                    )
-
-                    c.metric(
-                        "Audio peak",
-                        (
-                            f"{metrics['peak']}"
-                            if metrics["peak"] is not None
-                            else "N/A"
-                        ),
-                    )
-
-        except Exception:
-
-            st.info(
-                "Audio recording is unavailable in this browser. "
-                "You can still type your answer."
-            )
-
-        # ---------------- LIVE ANSWER REVIEW ----------------
-
-        current = st.session_state.get(
-            key, ""
-        ).strip()
+        # LIVE ANSWER REVIEW
+        current = st.session_state.get(key, "").strip()
 
         if current:
-
             review = evaluate_answer(
                 question,
-                current,
+                current
             )
 
-            st.markdown("### ⚡ Live answer review")
+            st.markdown("### 🪄 Live coaching snapshot")
 
-            a, b, c, d = st.columns(4)
+            m1, m2, m3, m4 = st.columns(4)
 
-            a.metric(
+            m1.metric(
                 "Practice score",
-                f"{review['score']}/100",
+                f"{review['score']}/100"
             )
 
-            b.metric(
-                "Words",
-                review["words"],
+            m2.metric(
+                "Answer length",
+                f"{review['words']} words"
             )
 
-            c.metric(
+            m3.metric(
                 "Structure",
-                f"{review['structure']}/25",
+                f"{review['structure']}/25"
             )
 
-            d.metric(
-                "Specificity",
-                f"{review['specificity']}/25",
+            m4.metric(
+                "Relevance estimate",
+                f"{review['relevance']}/25"
             )
 
-            good, improve = st.columns(2)
+            good, bad = st.columns(2)
 
             with good:
-
-                st.markdown("**Strengths**")
+                st.markdown("**What is working**")
 
                 for item in review["strengths"]:
                     st.success(item)
 
                 if not review["strengths"]:
                     st.caption(
-                        "Add more detail to identify strengths."
+                        "Keep developing your answer to identify strengths."
                     )
 
-            with improve:
-
-                st.markdown("**Improvement actions**")
+            with bad:
+                st.markdown("**Try this next**")
 
                 for item in review["feedback"]:
                     st.warning(item)
@@ -1228,253 +1223,299 @@ elif st.session_state.page == "Mock Interview":
             with st.expander(
                 "🗣️ Communication and wording tips"
             ):
-
                 for item in review["communication"]:
                     st.write("• " + item)
 
                 if review["fillers"]:
-
                     st.caption(
-                        "Detected in transcript: "
+                        "Detected: "
                         + ", ".join(
-                            f"{w}: {n}"
-                            for w, n in review["fillers"].items()
+                            f"{word}: {count}"
+                            for word, count in review["fillers"].items()
                         )
                     )
 
-        # ---------------- NAVIGATION ----------------
-
+        # NAVIGATION
         st.divider()
 
-        pcol, ncol, fcol = st.columns(
-            [1, 1, 1.2]
-        )
+        a, b, c = st.columns([1, 1, 1.25])
 
-        with pcol:
-
+        with a:
             st.button(
                 "← Previous",
                 disabled=(i == 0),
                 use_container_width=True,
-                on_click=previous_question,
+                on_click=previous_question
             )
 
-        with ncol:
-
+        with b:
             if i < total - 1:
-
                 st.button(
                     "Next question →",
                     type="primary",
                     use_container_width=True,
-                    on_click=next_question,
+                    on_click=next_question
                 )
 
-        with fcol:
-
+        with c:
             st.button(
-                "Finish interview",
+                "Finish interview ✓",
                 type="primary",
                 use_container_width=True,
-                on_click=finish_interview,
+                on_click=finish_interview
             )
 
-        st.markdown(
-            '<div class="footer">Review your transcript before finishing. Speech recognition can mishear words.</div>',
-            unsafe_allow_html=True,
+        st.caption(
+            "You can finish early. Unanswered questions will be included "
+            "as zero-score items in the session summary."
         )
 
 
-# ==========================================================
+# =========================================================
 # RESULTS DASHBOARD
-# ==========================================================
+# =========================================================
 
 elif st.session_state.page == "Results Dashboard":
 
-    st.subheader("📊 Your performance dashboard")
+    st.markdown("## 📊 Your performance studio")
 
-    st.write(
-        "Review your latest session and identify what to practise next."
+    st.caption(
+        "A practical review of this session — celebrate strengths "
+        "and choose one area to improve next."
     )
 
     result = st.session_state.result
 
     if not result:
-
-        st.info(
-            "Your dashboard will appear after you complete a mock interview."
-        )
+        st.markdown("""
+        <div class="panel">
+            <h3>Your dashboard is waiting for your first practice session.</h3>
+            <p>Complete a mock interview to unlock your performance insights.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
         st.button(
-            "Start your first interview",
+            "Start my first interview",
             type="primary",
-            on_click=go_setup,
+            on_click=go_setup
         )
 
     else:
+        details = result["details"]
+        total = result["count"]
+        score = result["score"]
+        answered = result["answered"]
 
-        st.markdown(
-            f"### Results for {result['name']}"
+        completion = (
+            round(answered / total * 100)
+            if total else 0
         )
 
-        st.caption(
-            f"{result['role']} · "
-            f"{result['experience']} · "
-            f"{result['type']} · "
-            f"{result['date']}"
-        )
-
-        voice_count = sum(
-            bool(x["audio"])
-            for x in result["details"]
-        )
-
-        pace_values = [
-            x["audio"].get("wpm")
-            for x in result["details"]
-            if x["audio"].get("wpm")
-        ]
-
-        avg_pace = (
-            round(sum(pace_values) / len(pace_values))
-            if pace_values else None
-        )
-
-        a, b, c, d, e = st.columns(5)
-
-        a.metric(
-            "Overall score",
-            f"{result['score']}/100",
-        )
-
-        b.metric(
-            "Answered",
-            f"{result['answered']}/{result['count']}",
-        )
-
-        c.metric(
-            "Recordings",
-            voice_count,
-        )
-
-        d.metric(
-            "Avg. speech pace",
-            f"{avg_pace} WPM" if avg_pace else "N/A",
-        )
-
-        e.metric(
-            "Sessions",
-            len(st.session_state.history),
-        )
-
-        if result["score"] >= 80:
-
-            st.success(
-                "Strong practice result. Refine your examples "
-                "and keep your delivery natural."
+        if score >= 80:
+            level = "Interview-ready momentum"
+            subtitle = "Your answers show consistent practice signals."
+        elif score >= 60:
+            level = "Promising foundation"
+            subtitle = (
+                "You have a base to build on. "
+                "Sharper examples can lift your performance."
             )
-
-        elif result["score"] >= 60:
-
-            st.info(
-                "Good foundation. Focus on stronger examples "
-                "and clearer structure."
-            )
-
         else:
-
-            st.warning(
-                "Keep practising complete answers with "
-                "context, actions and outcomes."
+            level = "Growth in progress"
+            subtitle = (
+                "Every interview is practice. Focus on complete, "
+                "specific answers next time."
             )
 
-        # ---------------- SKILL BREAKDOWN ----------------
+        x, y = st.columns([1.35, 1])
 
-        st.markdown("### Skill breakdown")
+        with x:
+            st.markdown(
+                f"""
+                <div class="score-hero">
+                    <div style="color:#f4bd62;font-size:.75rem;font-weight:800;letter-spacing:.14em">
+                        YOUR SESSION RESULT
+                    </div>
+                    <div class="score-number">
+                        {score}
+                        <span style="font-size:1.2rem;color:#d9e4ff"> / 100</span>
+                    </div>
+                    <h3 style="margin:5px 0 8px">{level}</h3>
+                    <p style="color:#e1eaff">{subtitle}</p>
+                    <div style="margin-top:17px;color:#c8d7f4;font-size:.88rem">
+                        {html.escape(result["role"])} ·
+                        {html.escape(result["type"])} ·
+                        {html.escape(result["date"])}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with y:
+            st.markdown("### Session snapshot")
+
+            st.metric(
+                "Questions answered",
+                f"{answered}/{total}"
+            )
+
+            st.progress(
+                completion / 100,
+                text=f"{completion}% completion"
+            )
+
+            st.metric(
+                "Practice sessions",
+                len(st.session_state.history)
+            )
+
+            st.caption(
+                f"Prepared for: {result['experience']}"
+            )
+
+        # SKILL BREAKDOWN
+        st.markdown("### Your skill map")
+
+        skill_definitions = [
+            ("Answer development", "development"),
+            ("STAR structure", "structure"),
+            ("Specific evidence", "specificity"),
+            ("Question relevance", "relevance"),
+        ]
 
         skill_rows = []
 
-        for label, key in [
-            ("Development", "development"),
-            ("Structure", "structure"),
-            ("Specificity", "specificity"),
-            ("Relevance", "relevance"),
-        ]:
-
+        for label, key in skill_definitions:
             value = (
                 round(
-                    sum(x[key] for x in result["details"])
-                    / len(result["details"])
+                    sum(item[key] for item in details)
+                    / len(details)
                 )
-                if result["details"] else 0
+                if details else 0
             )
 
             skill_rows.append({
                 "Skill": label,
-                "Average score": value,
+                "Score": value
             })
 
-        chart, priorities = st.columns(
-            [1.2, 1]
-        )
+        col_chart, col_focus = st.columns([1.25, 1])
 
-        with chart:
-
-            chart_df = pd.DataFrame(
-                skill_rows
-            ).set_index("Skill")
-
-            st.bar_chart(
-                chart_df,
-                height=290,
-            )
-
-        with priorities:
-
+        with col_chart:
             st.markdown(
-                '<div class="panel"><h3>Coaching priorities</h3>',
-                unsafe_allow_html=True,
+                """
+                <div class="panel">
+                    <h3>Skill breakdown</h3>
+                    <p style="color:#65728a">
+                        Average score across all questions · out of 25
+                    </p>
+                """,
+                unsafe_allow_html=True
             )
 
-            for row in sorted(
-                skill_rows,
-                key=lambda r: r["Average score"],
-            )[:3]:
-
-                st.write(
-                    f"**{row['Skill']} — "
-                    f"{row['Average score']} / 25**"
+            for row in skill_rows:
+                percentage = round(
+                    row["Score"] / 25 * 100
                 )
 
-                st.progress(
-                    min(
-                        1.0,
-                        row["Average score"] / 25,
-                    )
+                st.markdown(
+                    f"""
+                    <div class="bar-row">
+                        <div class="bar-label">
+                            <span>{row["Skill"]}</span>
+                            <span>{row["Score"]}/25</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:{percentage}%"></div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
             st.markdown(
                 "</div>",
-                unsafe_allow_html=True,
+                unsafe_allow_html=True
             )
 
-        # ---------------- QUESTION FEEDBACK ----------------
+        with col_focus:
+            weakest = min(
+                skill_rows,
+                key=lambda row: row["Score"]
+            )
 
-        st.markdown(
-            "### Question-by-question feedback"
-        )
+            strongest = max(
+                skill_rows,
+                key=lambda row: row["Score"]
+            )
 
-        for item in result["details"]:
+            st.markdown(
+                f"""
+                <div class="panel">
+                    <div style="font-size:1.5rem">🏆</div>
+                    <h3>Strongest signal</h3>
+                    <p>{strongest["Skill"]}</p>
+                    <h2 style="color:#2e65c8!important">
+                        {strongest["Score"]}/25
+                    </h2>
+                    <hr>
+                    <div style="font-size:1.5rem">🎯</div>
+                    <h3>Next growth area</h3>
+                    <p>{weakest["Skill"]}</p>
+                    <h2 style="color:#c27a22!important">
+                        {weakest["Score"]}/25
+                    </h2>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
+        # PERSONAL IMPROVEMENT PLAN
+        st.markdown("### Your next-practice plan")
+
+        plan = []
+
+        if weakest["Skill"] == "Answer development":
+            plan.append(
+                "Aim for a focused 45–120 word answer: "
+                "direct response, context, action and outcome."
+            )
+
+        elif weakest["Skill"] == "STAR structure":
+            plan.append(
+                "Practise the STAR sequence. Spend the most time "
+                "explaining your own Action and the Result."
+            )
+
+        elif weakest["Skill"] == "Specific evidence":
+            plan.append(
+                "Add concrete evidence: tools used, your contribution, "
+                "scale, time saved or measurable outcome."
+            )
+
+        else:
+            plan.append(
+                "Start by answering the exact question in one sentence, "
+                "then support it with a relevant example."
+            )
+
+        plan += [
+            "Prepare two different examples from study, projects, internships or work.",
+            "Practise aloud once, remove repeated phrases and end with a clear outcome."
+        ]
+
+        for number, item in enumerate(plan, 1):
+            st.markdown(f"**{number}.** {item}")
+
+        # QUESTION-WISE FEEDBACK
+        st.markdown("### Question-by-question coaching")
+
+        for item in details:
             with st.expander(
-                f"Q{item['number']}. "
-                f"{item['question']} · "
-                f"{item['score']}/100"
+                f"Q{item['number']} · {item['score']}/100 · {item['question']}"
             ):
-
-                st.markdown(
-                    "**Your answer / transcript**"
-                )
+                st.markdown("**Your answer**")
 
                 st.write(
                     item["answer"]
@@ -1482,98 +1523,64 @@ elif st.session_state.page == "Results Dashboard":
                     else "No answer submitted."
                 )
 
-                x1, x2, x3, x4 = st.columns(4)
+                z1, z2, z3, z4 = st.columns(4)
 
-                x1.metric(
+                z1.metric(
                     "Development",
-                    f"{item['development']}/25",
+                    f"{item['development']}/25"
                 )
 
-                x2.metric(
+                z2.metric(
                     "Structure",
-                    f"{item['structure']}/25",
+                    f"{item['structure']}/25"
                 )
 
-                x3.metric(
+                z3.metric(
                     "Specificity",
-                    f"{item['specificity']}/25",
+                    f"{item['specificity']}/25"
                 )
 
-                x4.metric(
+                z4.metric(
                     "Relevance",
-                    f"{item['relevance']}/25",
+                    f"{item['relevance']}/25"
                 )
 
                 if item["strengths"]:
-
                     st.markdown("**Strengths**")
 
-                    for msg in item["strengths"]:
-                        st.success(msg)
+                    for message in item["strengths"]:
+                        st.success(message)
 
                 if item["feedback"]:
+                    st.markdown("**Improvement suggestions**")
 
-                    st.markdown("**How to improve**")
-
-                    for msg in item["feedback"]:
-                        st.warning(msg)
+                    for message in item["feedback"]:
+                        st.warning(message)
 
                 if item["communication"]:
+                    st.markdown("**Communication notes**")
 
-                    st.markdown("**Communication tips**")
-
-                    for msg in item["communication"]:
-                        st.write("• " + msg)
+                    for message in item["communication"]:
+                        st.write("• " + message)
 
                 if item["audio"]:
+                    audio = item["audio"]
 
-                    am = item["audio"]
-
-                    st.markdown(
-                        "**Voice practice indicators**"
+                    st.caption(
+                        f"Voice practice: "
+                        f"{audio.get('duration') or 'N/A'} sec recording · "
+                        f"{audio.get('wpm') or 'N/A'} estimated words/minute"
                     )
 
-                    q1, q2, q3 = st.columns(3)
-
-                    q1.metric(
-                        "Duration",
-                        (
-                            f"{am['duration']} sec"
-                            if am["duration"] is not None
-                            else "N/A"
-                        ),
-                    )
-
-                    q2.metric(
-                        "Pace",
-                        (
-                            f"{am['wpm']} WPM"
-                            if am["wpm"]
-                            else "N/A"
-                        ),
-                    )
-
-                    q3.metric(
-                        "Peak level",
-                        (
-                            str(am["peak"])
-                            if am["peak"] is not None
-                            else "N/A"
-                        ),
-                    )
-
-        # ---------------- PRACTICE HISTORY ----------------
-
+        # PRACTICE HISTORY
         st.markdown("### Practice history")
 
         history_df = pd.DataFrame([
             {
                 "Date": h["date"],
-                "Candidate": h["name"],
                 "Role": h["role"],
-                "Interview type": h["type"],
-                "Questions": h["count"],
-                "Answered": h["answered"],
+                "Focus": h["type"],
+                "Answered": f"{h['answered']}/{h['count']}",
                 "Score": h["score"],
             }
             for h in st.session_state.history
@@ -1582,52 +1589,61 @@ elif st.session_state.page == "Results Dashboard":
         st.dataframe(
             history_df,
             use_container_width=True,
-            hide_index=True,
+            hide_index=True
         )
 
         if len(history_df) > 1:
+            st.markdown("**Score progression**")
 
-            st.markdown(
-                "#### Score progression"
+            trend = pd.DataFrame(
+                {
+                    "Session score": [
+                        h["score"]
+                        for h in st.session_state.history
+                    ]
+                },
+                index=[
+                    f"Session {i + 1}"
+                    for i in range(len(st.session_state.history))
+                ]
             )
-
-            trend = history_df[["Score"]].copy()
-
-            trend.index = [
-                f"Session {i + 1}"
-                for i in range(len(trend))
-            ]
 
             st.line_chart(
                 trend,
-                height=230,
+                height=220
             )
+
+        csv = history_df.to_csv(
+            index=False
+        ).encode("utf-8")
 
         st.download_button(
             "⬇️ Download practice history (CSV)",
-            history_df.to_csv(index=False).encode("utf-8"),
+            csv,
             "interviewready_history.csv",
             "text/csv",
-            use_container_width=True,
+            use_container_width=True
         )
 
         st.button(
-            "🔄 Start another interview",
+            "🔄 Start a fresh interview",
             type="primary",
             use_container_width=True,
-            on_click=go_setup,
+            on_click=go_setup
         )
 
         st.markdown("""
         <div class="tip">
-        <b>Important:</b>
-        Scores use transparent text-pattern rules, not a trained AI model.
-        Speech-to-text may make mistakes. Audio peak is not a measure
-        of confidence, emotion or voice quality.
+            <b>How to read these results</b><br>
+            Scores are transparent text-pattern practice estimates,
+            not a trained AI assessment or a prediction of hiring success.
+            Relevance is estimated using word overlap. Speech pace is
+            approximate and depends on transcription accuracy.
+            Session history is temporary and may reset when the app restarts.
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown(
-        '<div class="footer">InterviewReady MVP · Session history may reset when the app restarts. Do not enter confidential personal information.</div>',
-        unsafe_allow_html=True,
+        '<div class="footer">InterviewReady · Do not enter passwords, financial details or confidential personal information.</div>',
+        unsafe_allow_html=True
     )
